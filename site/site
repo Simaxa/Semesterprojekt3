@@ -1,0 +1,214 @@
+#Fra Bo's undervisning: 
+#Redigeret af Sima og Batoul
+import os
+from flask import Flask, render_template, request, url_for, redirect, session, flash
+from DBAccess import dbaccess
+import secrets
+import datetime
+import time
+
+app = Flask(__name__)
+app.secret_key = secrets.token_urlsafe(16)
+
+# Konfigurer upload-mappen
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(CURRENT_DIR, 'raw_data')
+
+# Opret upload-mappen, hvis den ikke findes
+if not os.path.exists(UPLOAD_FOLDER):
+    try:
+        os.makedirs(UPLOAD_FOLDER)
+        print(f"Mappen {UPLOAD_FOLDER} er blevet oprettet.")
+    except Exception as e:
+        print(f"Fejl ved oprettelse af mappen {UPLOAD_FOLDER}: {e}")
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+@app.before_request
+def log_request_info():
+    """
+    Logger alle forespørgsler for at finde dobbeltkald og fejlhåndtering.
+    """
+    print(f"Forespørgsel modtaget: {request.method} {request.path}")
+    if request.method == 'POST':
+        print(f"POST Data: {request.form}")
+        print(f"POST Filer: {request.files}")
+
+
+@app.route('/')
+def login():
+    if 'user' in session:
+        return redirect(url_for('welcome'))
+    return render_template('login.html', message="Indtast brugerid og kodeord")
+
+
+@app.route('/login', methods=('GET', 'POST'))
+def checklogin():
+    if 'user' in session:
+        return redirect(url_for('welcome'))
+    if request.method == 'POST':
+        select = "SELECT pw FROM user WHERE uid = %s"
+        id = request.form.get('ID')
+        pw = request.form.get('PW')
+        if id:
+            id = str(id).lower()
+
+        accessDB = dbaccess()
+        cursor = accessDB.cursor()
+        cursor.execute(select, (id,))
+        rec = cursor.fetchone()
+
+        OK = False
+        if rec:
+            if pw == rec[0]:
+                session["user"] = id
+                OK = True
+
+        cursor.close()
+        accessDB.close()
+        if OK:
+            return redirect(url_for('welcome'))
+    return render_template('login.html', message="Fejl: prøv igen!")
+
+
+@app.route('/welcome')
+def welcome():
+    if 'user' in session:
+        if 'count' in session:
+            count = session["count"] + 1
+        else:
+            count = 1
+        session["count"] = count
+        return render_template('welcome.html', id=session["user"], now=time.strftime("%d/%m %Y, %H:%M:%S"), count=count)
+    else:
+        return render_template('login.html', message="Indtast brugerid og kodeord")
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return render_template('login.html', message="Indtast brugerid og kodeord")
+
+
+@app.route('/create', methods=('GET', 'POST'))
+def create():
+    session.clear()
+    message = "Indtast fuldt navn, CPR-nummer, brugerid og kodeord:"
+    if request.method == 'POST':
+        name = request.form.get('name')
+        cpr = request.form.get('cpr')
+        id = request.form.get('ID')
+        pw = request.form.get('PW')
+
+        print(f"Formdata modtaget: name={name}, cpr={cpr}, id={id}, pw={pw}")
+
+        # Validering
+        if not all([name, cpr, id, pw]):
+            message = "Alle felter skal udfyldes!"
+            print("Manglende data i formular.")
+            return render_template('create.html', message=message)
+
+        if len(cpr) != 10 or not cpr.isdigit():
+            message = "Ugyldigt CPR-nummer. Det skal være 10 cifre."
+            print("CPR-validering fejlet.")
+            return render_template('create.html', message=message)
+
+        try:
+            accessDB = dbaccess()
+            cursor = accessDB.cursor()
+            insert = "INSERT INTO user(uid, pw, name, cpr) VALUES (%s, %s, %s, %s)"
+            cursor.execute(insert, (id.lower(), pw, name, cpr))
+            accessDB.commit()
+
+            print("Bruger oprettet med ID:", id)
+
+            cursor.close()
+            accessDB.close()
+            return render_template('created.html')
+        except Exception as e:
+            print(f"Fejl under oprettelse af bruger: {e}")
+            message = "Der opstod en fejl under oprettelsen. Prøv igen."
+        finally:
+            if 'cursor' in locals():
+                cursor.close()
+            if 'accessDB' in locals():
+                accessDB.close()
+
+    return render_template('create.html', message=message)
+
+
+@app.route('/upload', methods=('GET', 'POST'))
+def upload_file():
+    if 'user' not in session:
+        return redirect(url_for('login'))  # Kræver login
+
+    print("Upload-ruten blev kaldt.")  # Debug log
+
+    message = "Vælg filer at uploade:"
+    if request.method == 'POST':
+        user_uid = session['user']  # Hent brugerens uid fra sessionen
+        user_folder = os.path.join(app.config['UPLOAD_FOLDER'], user_uid)  # Opret brugerens mappe
+
+        # Opret brugerens mappe, hvis den ikke eksisterer
+        if not os.path.exists(user_folder):
+            try:
+                os.makedirs(user_folder)
+                print(f"Mappen '{user_folder}' blev oprettet.")
+            except Exception as e:
+                print(f"Fejl ved oprettelse af mappen '{user_folder}': {e}")
+                flash("Kunne ikke oprette brugerens mappe.")
+                return redirect(request.url)
+
+        if 'files' not in request.files:
+            flash('Ingen filer valgt.')
+            return redirect(request.url)
+
+        files = request.files.getlist('files')
+        if not files or files[0].filename == '':
+            flash('Ingen filer valgt.')
+            return redirect(request.url)
+
+        for file in files:
+            if file.filename:
+                save_path = os.path.join(user_folder, file.filename)
+
+                try:
+                    # Gem filen i brugerens mappe
+                    file.save(save_path)
+                    print(f"Fil gemt: {save_path}")
+
+                    # Gem brugerens mappe-sti i databasen
+                    folder_path = os.path.join(app.config['UPLOAD_FOLDER'], user_uid)
+                    accessDB = dbaccess()
+                    cursor = accessDB.cursor()
+                    update = "UPDATE user SET file_path = %s WHERE uid = %s"
+                    cursor.execute(update, (folder_path, user_uid))
+                    accessDB.commit()
+                    cursor.close()
+                    accessDB.close()
+                except Exception as e:
+                    print(f"Fejl ved gemning af fil '{file.filename}': {e}")
+                    flash(f"Fejl ved upload af {file.filename}")
+                    return redirect(request.url)
+
+        flash(f"{len(files)} filer blev uploadet!")
+        return redirect(url_for('upload_file'))
+
+    return render_template('upload.html', message=message)
+
+@app.route('/test_write')
+def test_write():
+    try:
+        test_file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'testfile.txt')
+        with open(test_file_path, 'w') as f:
+            f.write("Dette er en testfil.")
+        print(f"Testfil oprettet: {test_file_path}")
+        return f"Testfil oprettet: {test_file_path}"
+    except Exception as e:
+        print(f"Fejl ved oprettelse af testfil: {e}")
+        return f"Fejl ved oprettelse af testfil: {e}"
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=60030, debug=True)

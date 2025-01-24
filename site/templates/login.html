@@ -1,0 +1,109 @@
+#Fra Bo's undervisning 
+#Redigeret af Sima
+<html>
+    <head>
+        <title>Log ind</title>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+        <meta http-equiv="Pragma" content="no-cache">
+        <meta http-equiv="expires" content="0">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/login.css') }}">
+        <script src="{{ url_for('static', filename= 'js/login.js') }}"></script>
+        <style>
+            .cookie-banner {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                background-color: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 15px;
+                text-align: center;
+                z-index: 1000;
+            }
+
+            .cookie-banner button {
+                background-color: skyblue;
+                border: none;
+                padding: 8px 15px;
+                color: white;
+                font-size: 14px;
+                cursor: pointer;
+                border-radius: 5px;
+            }
+
+            .cookie-banner button:hover {
+                background-color: deepskyblue;
+            }
+
+            .help-button {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background-color: skyblue;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                font-size: 14px;
+                border-radius: 50%;
+                cursor: pointer;
+                z-index: 1000;
+            }
+
+            .help-button:hover {
+                background-color: deepskyblue;
+            }
+
+            .ekg-image {
+                display: block;
+                width: 100%; /* Fylder hele bredden */
+                height: auto; /* Bevarer billedets proportioner */
+                margin: 0; /* Ingen margin */
+            }
+        </style>
+    </head>
+    <body>
+        <div align="CENTER">
+            <h1>Login</h1>
+            <p align="CENTER">{{ message }}</p>
+            <form action="login" method="post">
+                <table align="CENTER">
+                    <tr>
+                        <td>
+                            <label for="ID">ID: </label>
+                        </td>
+                        <td>
+                            <input type="text" name="ID" id="ID" pattern="[A-Za-z0-9]+" title="ID kan kun indeholde bogstaver og tal." required>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label for="kodeord">Kodeord: </label>
+                        </td>
+                        <td>
+                            <input type="password" name="PW" id="kodeord" required>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" align="RIGHT">
+                            <input type="submit" value="Log ind">
+                        </td>
+                    </tr>
+                </table>
+            </form>
+            <button onclick="create()">Opret konto</button>
+            <p style="font-size: 12px; color: gray; margin-top: 5px;">Opret bruger ved første login</p>
+        </div>
+
+        <!-- EKG-billede, strækker sig over hele bredden -->
+        <img src="{{ url_for('static', filename='img/ekg_pic.jpeg') }}" alt="EKG-billede" class="ekg-image">
+
+        <!-- Accept cookies boks -->
+        <div class="cookie-banner">
+            <p>Vi bruger cookies til at forbedre din oplevelse. Ved at fortsætte accepterer du vores <a href="/privacy-policy" style="color: skyblue;">cookiepolitik</a>.</p>
+            <button onclick="this.parentElement.style.display='none'">Acceptér cookies</button>
+        </div>
+
+        <!-- Hjælp knap -->
+        <button class="help-button" onclick="alert('Hjælp knap klikket!')">?</button>
+    </body>
+</html>

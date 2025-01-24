@@ -1,0 +1,71 @@
+#Fra Bo's undervisning 
+#Redigeret af Sima
+<html>
+    <head>
+        <title>Upload Data</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                text-align: center;
+                margin-top: 50px;
+            }
+            form {
+                margin: 20px auto;
+                display: inline-block;
+                padding: 20px;
+                border: 1px solid #ccc;
+                border-radius: 10px;
+                background-color: #f9f9f9;
+            }
+            input[type="file"] {
+                margin-bottom: 20px;
+                font-size: 16px;
+            }
+            button {
+                padding: 10px 20px;
+                font-size: 16px;
+                color: #fff;
+                background-color: #007bff;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+            button:hover {
+                background-color: #0056b3;
+            }
+            ul {
+                list-style: none;
+                padding: 0;
+                color: green;
+            }
+            .error {
+                color: red;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>{{ message }}</h1>
+
+        <!-- Vis eventuelle fejl- eller succesmeddelelser -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul>
+                {% for msg in messages %}
+                    <li class="{% if 'Fejl' in msg %}error{% endif %}">{{ msg }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Upload-formular -->
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <input type="file" name="files" multiple required>
+            <br>
+            <button type="submit">Upload</button>
+        </form>
+
+        <!-- Tilbage til velkomstsiden -->
+        <br>
+        <a href="{{ url_for('welcome') }}">Tilbage til velkomstsiden</a>
+    </body>
+</html>

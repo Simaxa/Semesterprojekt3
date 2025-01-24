@@ -1,0 +1,104 @@
+#Fra Bo's undervisning 
+#Redigeret af Sima
+<html>
+    <head>
+        <title>Velkommen</title>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+        <meta http-equiv="Pragma" content="no-cache">
+        <meta http-equiv="expires" content="0">
+        <script src="{{ url_for('static', filename= 'js/welcome.js') }}"></script>
+        <!-- Link til welcome.css -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/welcome.css') }}">
+        <style>
+            /* CSS til centrering af div og tekst */
+            .center-div {
+                text-align: center;  /* Centrere tekst og knapper */
+                margin: 0 auto;      /* Centrere containeren */
+                padding: 20px;       /* Tilføje luft omkring indholdet */
+            }
+
+            h1 {
+                color: skyblue;  /* Gør h1 tekst farvet skyblue */
+            }
+
+            /* Styling for knapper */
+            .large-button {
+                font-size: 18px;
+                padding: 15px 30px;
+                margin: 10px;
+                cursor: pointer;
+                border: 2px solid skyblue;
+                border-radius: 5px;
+                background-color: transparent; /* Ingen baggrundsfarve */
+            }
+
+            .large-button:hover {
+                background-color: lightgray;  /* Farveændring ved hover */
+            }
+
+            /* Centrering af tabel */
+            table {
+                margin: 20px auto; /* Centrere tabel */
+            }
+
+            table td button {
+                background-color: lightgray;
+                border: none;
+                padding: 10px 20px;
+                cursor: pointer;
+                border-radius: 5px;
+            }
+
+            table td button:hover {
+                background-color: gray;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="center-div">
+            {% if count == 1 %}
+            <h1>Velkommen {{id}}</h1> <!-- Kun én velkomstbesked med skyblue farve -->
+            {% else %}
+            <h1>Velkommen tilbage {{id}}</h1> <!-- H1-stil med skyblue farve -->
+            {% endif %}
+            <p>Dato og tid: {{now}}</p>
+            <div>
+                <!-- Upload Data knap -->
+                <button class="large-button" onclick="uploadData()">Upload EKG-Data</button>
+                
+                <!-- Konsultationer knap -->
+                <button class="large-button" onclick="consultations()">Vis Konsultationer</button>
+            </div>
+            <table align="CENTER">
+                <tr>
+                    <td>
+                        <button onclick="reload()">Reload</button>
+                    </td>
+                    <td>
+                        <button onclick="logout()">Logout</button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <script>
+            // JavaScript funktion til Upload Data knappen
+            function uploadData() {
+                window.location.href = "/upload";
+            }
+
+            // JavaScript funktion til Konsultationer knappen
+            function consultations() {
+                alert("Konsultationer knap klikket!"); 
+            }
+
+            // Reload og Logout funktioner
+            function reload() {
+                location.reload();
+            }
+
+            function logout() {
+                window.location.href = "/logout";
+            }
+        </script>
+    </body>
+</html>
